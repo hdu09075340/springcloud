@@ -1,0 +1,124 @@
+server:
+  port: 8763
+#####################################################################################################
+spring:
+  application:
+    name: user-service
+  redis:
+    host: 191.168.0.33
+    port: 6379
+    password: 111111
+  redis2:
+    host: 191.168.0.33
+    port: 6380
+    password: 111111
+    # mysql 属性配置
+#============== kafka ===================
+# 指定kafka 代理地址，可以多个
+  kafka:
+    bootstrap-servers: 191.168.0.33:9092
+    producer:
+      retries: 0
+      # 每次批量发送消息的数量
+      batch-size: 16384
+      buffer-memory: 33554432
+      # 指定消息key和消息体的编解码方式
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    consumer:
+      group-id: test-consumer-group
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    # 指定kafka logback 日志配置
+    log:
+      topic: test
+      write:
+        timeout: 3000
+      syncSend: true
+#============== sharding-JDBC ===================
+sharding:
+  jdbc:
+    datasource:
+      names: ds0,ds1
+      ds0:
+        type: com.alibaba.druid.pool.DruidDataSource
+        driver-class-name: com.mysql.jdbc.Driver
+        url: jdbc:mysql://47.104.13.230:3306/demo1
+        username: root
+        password: Hzspeedy123
+      ds1:
+        type: com.alibaba.druid.pool.DruidDataSource
+        driver-class-name: com.mysql.jdbc.Driver
+        url: jdbc:mysql://47.104.13.230:3306/demo2
+        username: root
+        password: Hzspeedy123
+    config:
+      sharding:
+        props:
+          sql.show: true
+        tables:
+          users:
+            key-generator-column-name: id  #主键
+            actual-data-nodes: ds${0..1}.users${0..1}  #数据节点
+            database-strategy:  #分库策略
+              inline:
+                sharding-column: id
+                algorithm-expression: ds${id % 2}
+            table-strategy:  #分表策略
+              inline:
+                shardingColumn: sex
+                algorithm-expression: users${sex % 2}
+#####################################################################################################
+rocketmq:
+  producer:
+    groupName: vehicleProducerGroup
+    namesrvAddr: 191.168.0.33:9876
+    instanceName: vehicleProducer
+    topic: topic2019
+    tag: test
+    maxMessageSize: 131072
+    sendMsgTimeout: 10000
+  consumer:
+    namesrvAddr: 191.168.0.33:9876
+    groupName: vehicleProducerGroup
+    topic: topic2019
+    tag: test
+    consumeThreadMin: 20
+    consumeThreadMax: 64
+#####################################################################################################
+# eureka 属性配置
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://191.168.0.33:8761/eureka
+      #defaultZone: http://peer1:8761/eureka,http://peer2:8762/eureka
+      #defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true # 优先注册IP地址而不是hostname
+  healthcheck:
+    enabled: true # 启用健康检查,注意:需要引用spring boot actuator
+#####################################################################################################
+# 日志配置
+logging:
+  #logback.xml加载早于application.yml 指定logback配置文件的位置。这样SpringBoot就不会在获取配置中心的配置前加载日志配置
+  config: classpath:logback-spring-j.xml
+  path: D:/nmyslog/nmys
+  level: debug
+#mybatis 配置
+#mybatis:
+#  mapper-locations : classpath:sqlMapper/*.xml
+#  type-aliases-package : com.example.basedao.model
+#  configuration:
+#    map-underscore-to-camel-case: true #true表示开启驼峰转换
+#mybatis 分页插件
+pagehelper:
+  auto-dialect: mysql
+  reasonable: false
+  support-methods-arguments: true
+#elasticsearch
+elasticsearch:
+  ip: 191.168.0.33
+  port: 9200
+  pool: 5
+  cluster-name: my-es
+
